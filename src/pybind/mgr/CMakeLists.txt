@@ -52,6 +52,7 @@ set(mgr_modules
   status
   telegraf
   telemetry
+  wear
   # tests (for testing purpose only)
   test_orchestrator
   volumes)

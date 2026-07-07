@@ -977,7 +977,7 @@ class CephadmOrchestrator(orchestrator.Orchestrator, MgrModule):
         Generate a unique random service name
         """
         suffix = daemon_type not in [
-            'mon', 'crash', 'ceph-exporter', 'node-proxy',
+            'mon', 'crash', 'ceph-exporter', 'node-proxy', 'wear-agent',
             'prometheus', 'node-exporter', 'grafana', 'alertmanager',
             'container', 'agent', 'snmp-gateway', 'loki', 'promtail', 'alloy',
             'elasticsearch', 'jaeger-collector', 'jaeger-agent', 'jaeger-query', 'mgmt-gateway', 'oauth2-proxy'
@@ -3907,6 +3907,7 @@ Then run the following:
                 'jaeger-collector': PlacementSpec(count=1),
                 'jaeger-query': PlacementSpec(count=1),
                 'node-proxy': PlacementSpec(host_pattern='*'),
+                'wear-agent': PlacementSpec(host_pattern='*'),
                 SMBService.TYPE: PlacementSpec(count=1),
             }
             spec.placement = defaults[spec.service_type]

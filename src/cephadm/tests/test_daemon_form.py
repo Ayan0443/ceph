@@ -26,6 +26,7 @@ _cephadm = import_cephadm()
         ('osd', daemons.OSD),
         ('prometheus', _cephadm.Monitoring),
         ('snmp-gateway', _cephadm.SNMPGateway),
+        ('wear-agent', _cephadm.WearAgent),
     ],
 )
 def test_choose_daemon_form(daemon_type, cls):
@@ -47,6 +48,7 @@ def test_choose_daemon_form_error():
         ('nfs', False),
         ('nvmeof', True),
         ('osd', True),
+        ('wear-agent', False),
     ],
 )
 def test_is_sysctl_daemon_form(dt, is_sdf):

@@ -844,6 +844,7 @@ class ServiceSpec(object):
         'nfs',
         'node-exporter',
         'node-proxy',
+        'wear-agent',
         'nvmeof',
         'osd',
         'prometheus',
@@ -929,6 +930,7 @@ class ServiceSpec(object):
             'jaeger-query': TracingSpec,
             'jaeger-tracing': TracingSpec,
             'node-proxy': NodeProxySpec,
+            'wear-agent': WearAgentSpec,
             SMBSpec.service_type: SMBSpec,
         }.get(service_type, cls)
         if ret == ServiceSpec and not service_type:
@@ -4213,6 +4215,16 @@ class NodeProxySpec(ServiceSpec):
         assert service_type == 'node-proxy'
         super(NodeProxySpec, self).__init__('node-proxy', placement=placement)
         self.ssl: bool = True
+        self.validate()
+
+
+class WearAgentSpec(ServiceSpec):
+    def __init__(self,
+                 service_type: str,
+                 placement: Optional[PlacementSpec] = None,
+                 ) -> None:
+        assert service_type == 'wear-agent'
+        super(WearAgentSpec, self).__init__('wear-agent', placement=placement)
         self.validate()
 
 

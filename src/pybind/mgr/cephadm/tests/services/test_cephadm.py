@@ -75,11 +75,12 @@ class TestCephadmService:
             assert "client.%s.id1" % (daemon_type) == \
                 service_registry.get_service(daemon_type).get_auth_entity("id1")
 
-        assert "client.crash.host" == \
-            service_registry.get_service('crash').get_auth_entity("id1", "host")
-        with pytest.raises(OrchestratorError):
-            service_registry.get_service('crash').get_auth_entity("id1", "")
-            service_registry.get_service('crash').get_auth_entity("id1")
+        for daemon_type in ['crash', 'wear-agent']:
+            assert "client.%s.host" % daemon_type == \
+                service_registry.get_service(daemon_type).get_auth_entity("id1", "host")
+            with pytest.raises(OrchestratorError):
+                service_registry.get_service(daemon_type).get_auth_entity("id1", "")
+                service_registry.get_service(daemon_type).get_auth_entity("id1")
 
         assert "mon." == service_registry.get_service('mon').get_auth_entity("id1", "host")
         assert "mon." == service_registry.get_service('mon').get_auth_entity("id1", "")

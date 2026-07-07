@@ -43,7 +43,7 @@ RESCHEDULE_FROM_OFFLINE_HOSTS_TYPES = ['haproxy', 'nfs', 'keepalived']
 CEPH_UPGRADE_ORDER = CEPH_TYPES + GATEWAY_TYPES + MONITORING_STACK_TYPES + MGMT_GATEWAY_STACK_TYPES
 
 # these daemon types use the ceph container image
-CEPH_IMAGE_TYPES = CEPH_TYPES + ['iscsi', 'nfs', 'node-proxy']
+CEPH_IMAGE_TYPES = CEPH_TYPES + ['iscsi', 'nfs', 'node-proxy', 'wear-agent']
 
 # these daemons do not use the ceph image. There are other daemons
 # that also don't use the ceph image, but we only care about those

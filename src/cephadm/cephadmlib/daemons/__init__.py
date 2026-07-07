@@ -9,6 +9,7 @@ from .smb import SMB
 from .snmp import SNMPGateway
 from .tracing import Tracing
 from .node_proxy import NodeProxy
+from .wear_agent import WearAgent
 from .mgmt_gateway import MgmtGateway
 from .oauth2_proxy import OAuth2Proxy
 
@@ -27,6 +28,7 @@ __all__ = [
     'SNMPGateway',
     'Tracing',
     'NodeProxy',
+    'WearAgent',
     'MgmtGateway',
     'OAuth2Proxy',
 ]
