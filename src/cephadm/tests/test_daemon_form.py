@@ -26,6 +26,7 @@ _cephadm = import_cephadm()
         ('osd', daemons.OSD),
         ('prometheus', _cephadm.Monitoring),
         ('snmp-gateway', _cephadm.SNMPGateway),
+        # 原因：导入 daemons 后必须注册 WearAgent 分发。
         ('wear-agent', _cephadm.WearAgent),
     ],
 )
@@ -48,6 +49,7 @@ def test_choose_daemon_form_error():
         ('nfs', False),
         ('nvmeof', True),
         ('osd', True),
+        # 原因：wear-agent 直接加载 eBPF，不生成 sysctl 文件。
         ('wear-agent', False),
     ],
 )

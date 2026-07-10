@@ -1,3 +1,4 @@
+import errno
 import sqlite3
 import threading
 
@@ -7,6 +8,8 @@ import wear.module as wear_mod
 
 
 def make_mgr():
+    """创建使用内存数据库且 Ceph 副作用可观测的 MGR 模块。"""
+
     mgr = wear_mod.Module.__new__(wear_mod.Module)
     mgr._db_lock = threading.Lock()
     mgr._db = sqlite3.connect(":memory:", isolation_level=None)
@@ -28,6 +31,8 @@ def make_mgr():
 
 
 def test_extract_smart_wear_accepts_flat_and_nested_nvme_fields():
+    """验证两种 SMART 上报结构都能提取耐久度计数器。"""
+
     assert wear_mod.extract_smart_wear({
         "smart": {"percentage_used": "12", "data_units_written": "34"}
     }) == (12.0, 34)
@@ -43,6 +48,8 @@ def test_extract_smart_wear_accepts_flat_and_nested_nvme_fields():
 
 
 def test_estimate_remaining_life_prefers_smart_wear_slope():
+    """验证存在历史数据时优先得到高可信度 SMART 斜率估算。"""
+
     estimate = wear_mod.estimate_remaining_life(
         percentage_used=12.0,
         total_written_bytes=10_000_000,
@@ -59,6 +66,8 @@ def test_estimate_remaining_life_prefers_smart_wear_slope():
 
 
 def test_estimate_remaining_life_falls_back_to_write_rate():
+    """验证 SMART 历史不足时使用写入速率估算剩余寿命。"""
+
     estimate = wear_mod.estimate_remaining_life(
         percentage_used=25.0,
         total_written_bytes=1000,
@@ -71,6 +80,8 @@ def test_estimate_remaining_life_falls_back_to_write_rate():
 
 
 def test_put_report_persists_samples_state_hotspots_and_updates_device_state():
+    """验证一次上报事务会更新历史、状态、健康告警和设备接口。"""
+
     mgr = make_mgr()
     base_report = {
         "host": "host-a",
@@ -126,6 +137,8 @@ def test_put_report_persists_samples_state_hotspots_and_updates_device_state():
 
 
 def test_normalize_report_rejects_missing_identifiers():
+    """验证缺少稳定主机或设备标识的报告会被拒绝。"""
+
     mgr = make_mgr()
 
     with pytest.raises(ValueError, match="report.host"):
@@ -133,3 +146,20 @@ def test_normalize_report_rejects_missing_identifiers():
 
     with pytest.raises(ValueError, match="report.devid"):
         mgr.normalize_report({"host": "host-a"})
+
+
+@pytest.mark.parametrize("prefix", ["wear report", "wear status"])
+def test_cli_commands_return_eagain_when_mgr_db_is_not_ready(prefix):
+    """验证两个 CLI 包装器都将 MgrDBNotReady 转换为 EAGAIN。"""
+
+    mgr = make_mgr()
+    mgr.db_ready = lambda: False
+    inbuf = "{}" if prefix == "wear report" else None
+
+    retval, stdout, stderr = (
+        wear_mod.WearCLICommand.COMMANDS[prefix].call(mgr, {}, inbuf)
+    )
+
+    assert retval == -errno.EAGAIN
+    assert stdout == ""
+    assert stderr == "mgr db not yet available"

@@ -62,6 +62,8 @@ def get_auth_entity(daemon_type: str, daemon_id: str, host: str = "") -> AuthEnt
     # the CephService class refers to service types, not daemon types
     if daemon_type in ['rgw', 'rbd-mirror', 'cephfs-mirror', 'nfs', "iscsi", 'nvmeof', 'ingress', 'ceph-exporter']:
         return AuthEntity(f'client.{daemon_type}.{daemon_id}')
+    # 原因：wear-agent 凭据按主机划分，因为一个采集器服务该主机上的
+    # 全部 OSD 设备，而不是单个服务实例。
     elif daemon_type in ['crash', 'agent', 'node-proxy', 'wear-agent']:
         if host == "":
             raise OrchestratorError(

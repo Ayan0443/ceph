@@ -3,7 +3,11 @@ import types
 
 
 class _Base:
+    """为单元测试中不可用的 Ceph 扩展类型提供空实现基类。"""
+
     def __init__(self, *args, **kwargs):
+        """接受 MGR 基类可能传入的任意构造参数。"""
+
         pass
 
 
@@ -27,8 +31,12 @@ ceph_argparse = types.ModuleType("ceph_argparse")
 
 
 class _CephArgtype:
+    """模拟 Ceph CLI 参数描述依赖。"""
+
     @staticmethod
     def to_argdesc(*args, **kwargs):
+        """返回足以完成命令注册的空参数描述。"""
+
         return ""
 
 

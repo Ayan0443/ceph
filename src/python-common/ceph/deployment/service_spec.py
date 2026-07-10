@@ -844,6 +844,7 @@ class ServiceSpec(object):
         'nfs',
         'node-exporter',
         'node-proxy',
+        # 原因：允许在声明式服务 YAML/JSON 中使用 wear-agent。
         'wear-agent',
         'nvmeof',
         'osd',
@@ -930,6 +931,8 @@ class ServiceSpec(object):
             'jaeger-query': TracingSpec,
             'jaeger-tracing': TracingSpec,
             'node-proxy': NodeProxySpec,
+            # 原因：通用 ServiceSpec 输入必须构造
+            # cephadm 调度使用的专用主机放置类型。
             'wear-agent': WearAgentSpec,
             SMBSpec.service_type: SMBSpec,
         }.get(service_type, cls)
@@ -4219,10 +4222,16 @@ class NodeProxySpec(ServiceSpec):
 
 
 class WearAgentSpec(ServiceSpec):
+    """描述 SSD 磨损采集服务的主机放置规则。"""
+
     def __init__(self,
                  service_type: str,
                  placement: Optional[PlacementSpec] = None,
                  ) -> None:
+        """初始化并校验 wear-agent 服务声明。"""
+
+        # 原因：wear-agent 按主机部署，无需用户选择 service ID；
+        # 仅由放置规则决定哪些节点运行采集器。
         assert service_type == 'wear-agent'
         super(WearAgentSpec, self).__init__('wear-agent', placement=placement)
         self.validate()

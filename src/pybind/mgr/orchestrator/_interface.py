@@ -1022,6 +1022,7 @@ def daemon_type_to_service(dtype: str) -> str:
         'container': 'container',
         'agent': 'agent',
         'node-proxy': 'node-proxy',
+        # 原因：每个 wear-agent daemon 同时对应一个独立 orchestrator 服务。
         'wear-agent': 'wear-agent',
         'snmp-gateway': 'snmp-gateway',
         'elasticsearch': 'elasticsearch',
@@ -1060,6 +1061,7 @@ def service_to_daemon_types(stype: str) -> List[str]:
         'container': ['container'],
         'agent': ['agent'],
         'node-proxy': ['node-proxy'],
+        # 原因：该服务仅包含一种 daemon 类型，不需要 sidecar daemon。
         'wear-agent': ['wear-agent'],
         'snmp-gateway': ['snmp-gateway'],
         'elasticsearch': ['elasticsearch'],

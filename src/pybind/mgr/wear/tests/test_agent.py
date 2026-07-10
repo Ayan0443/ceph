@@ -24,6 +24,8 @@ import wear.agent as agent_mod
 
 
 def test_diskstats_parse_and_delta():
+    """验证内核累计计数会转换为周期字节数、操作数和速率。"""
+
     previous = DiskstatsCollector.parse([
         "259 0 nvme0n1 0 0 0 0 10 0 20 0 0 0 0 0 0 0 0",
     ])
@@ -39,6 +41,8 @@ def test_diskstats_parse_and_delta():
 
 
 def test_hotspot_tracker_splits_cross_bucket_writes():
+    """验证跨区域写入会按重叠范围分配到每个逻辑桶。"""
+
     tracker = HotspotTracker(bucket_size=100)
 
     tracker.record("nvme0n1", 50, 175)
@@ -52,6 +56,8 @@ def test_hotspot_tracker_splits_cross_bucket_writes():
 
 
 def test_build_wear_report_matches_mgr_report_contract():
+    """验证主机报告结构和字段单位符合 MGR 契约。"""
+
     previous = DiskstatsCollector.parse([
         "259 0 nvme0n1 0 0 0 0 10 0 20 0 0 0 0 0 0 0 0",
     ])["nvme0n1"]
@@ -85,14 +91,20 @@ def test_build_wear_report_matches_mgr_report_contract():
 
 
 def test_collect_smart_runs_smartctl_json():
+    """验证 SMART 采集使用只读 JSON 输出和指定超时时间。"""
+
     calls = []
 
     class Proc:
+        """模拟成功的 smartctl 子进程结果。"""
+
         returncode = 0
         stdout = '{"percentage_used": 4}'
         stderr = ""
 
     def runner(cmd, **kwargs):
+        """记录 smartctl 参数并返回成功的模拟进程。"""
+
         calls.append((cmd, kwargs))
         return Proc()
 
@@ -103,7 +115,11 @@ def test_collect_smart_runs_smartctl_json():
 
 
 def test_collect_smart_reports_smartctl_errors():
+    """验证 smartctl 失败会转换为 Agent 专用异常。"""
+
     class Proc:
+        """模拟失败的 smartctl 子进程结果。"""
+
         returncode = 2
         stdout = ""
         stderr = "permission denied"
@@ -113,6 +129,8 @@ def test_collect_smart_reports_smartctl_errors():
 
 
 def test_parse_device_ids_and_osd_metadata_devices():
+    """验证合法 Ceph 设备 ID 会被合并，错误元数据会被跳过。"""
+
     assert parse_device_ids("nvme0n1=ID0,sdb=ID1;bad,empty=") == {
         "nvme0n1": "ID0",
         "sdb": "ID1",
@@ -125,14 +143,20 @@ def test_parse_device_ids_and_osd_metadata_devices():
 
 
 def test_load_ceph_device_map_runs_ceph_metadata_command():
+    """验证设备发现使用 OSD 元数据并解析设备归属映射。"""
+
     calls = []
 
     class Proc:
+        """模拟成功的 ceph osd metadata 子进程结果。"""
+
         returncode = 0
         stdout = '[{"device_ids": "nvme0n1=ID0"}]'
         stderr = ""
 
     def runner(cmd, **kwargs):
+        """记录 Ceph 发现命令并返回元数据 JSON。"""
+
         calls.append((cmd, kwargs))
         return Proc()
 
@@ -142,14 +166,20 @@ def test_load_ceph_device_map_runs_ceph_metadata_command():
 
 
 def test_send_report_posts_json_to_wear_report_command():
+    """验证报告会序列化到 wear report 命令的标准输入。"""
+
     calls = []
 
     class Proc:
+        """模拟成功的 ceph wear report 子进程结果。"""
+
         returncode = 0
         stdout = "{}"
         stderr = ""
 
     def runner(cmd, **kwargs):
+        """记录上报命令及其序列化标准输入。"""
+
         calls.append((cmd, kwargs))
         return Proc()
 
@@ -161,43 +191,69 @@ def test_send_report_posts_json_to_wear_report_command():
 
 
 class FakeDiskstats:
+    """为 Agent 测试提供确定性的 diskstats 快照。"""
+
     def __init__(self, samples):
+        """按照 Agent 应观测的顺序保存快照。"""
+
         self.samples = list(samples)
 
     def sample(self):
+        """返回下一份累计计数快照。"""
+
         return self.samples.pop(0)
 
 
 def test_ebpf_collector_records_kernel_write_events_as_hotspots():
+    """验证内核 dev_t 和扇区字段会转换为预期热点。"""
+
     tracker = HotspotTracker(bucket_size=1024)
 
     class FakeEvent:
+        """模拟一次块写 tracepoint 事件。"""
+
         dev = (259 << 20) | 0
         sector = 2
         bytes = 1024
 
     class FakeEvents:
+        """模拟采集器使用的 BCC perf 事件表。"""
+
         def open_perf_buffer(self, callback):
+            """保存采集器注册的回调。"""
+
             self.callback = callback
 
         def event(self, data):
+            """将模拟 perf 数据解码为预定义事件。"""
+
             return FakeEvent()
 
     class FakeBPF:
+        """模拟 WearAgent 使用的最小 BCC 接口。"""
+
         def __init__(self, text):
+            """记录编译程序并提供事件表。"""
+
             self.text = text
             self.events = FakeEvents()
 
         def __getitem__(self, key):
+            """返回模拟 perf 事件表。"""
+
             assert key == "events"
             return self.events
 
         def perf_buffer_poll(self, timeout):
+            """记录采集器使用的轮询超时时间。"""
+
             self.timeout = timeout
 
     created = {}
 
     def bpf_factory(text):
+        """创建并保存注入的 BPF 实现。"""
+
         created["bpf"] = FakeBPF(text)
         return created["bpf"]
 
@@ -215,6 +271,8 @@ def test_ebpf_collector_records_kernel_write_events_as_hotspots():
 
 
 def test_wear_agent_sample_once_builds_and_submits_reports():
+    """验证基线、增量、SMART、热点、提交和周期清理流程。"""
+
     previous = DiskstatsCollector.parse([
         "259 0 nvme0n1 0 0 0 0 10 0 20 0 0 0 0 0 0 0 0",
     ])
@@ -254,6 +312,8 @@ def test_wear_agent_sample_once_builds_and_submits_reports():
 
 
 def test_wear_agent_keeps_running_when_smart_fails():
+    """验证单设备 SMART 失败后 diskstats 上报仍会继续。"""
+
     previous = DiskstatsCollector.parse([
         "259 0 nvme0n1 0 0 0 0 10 0 20 0 0 0 0 0 0 0 0",
     ])
@@ -263,6 +323,8 @@ def test_wear_agent_keeps_running_when_smart_fails():
     clock_values = iter([1.0, 2.0])
 
     def smart_collector(dev):
+        """模拟无法读取 SMART 数据的设备。"""
+
         raise SmartctlError("boom")
 
     agent = WearAgent(
@@ -280,6 +342,8 @@ def test_wear_agent_keeps_running_when_smart_fails():
 
 
 def test_load_agent_config_applies_defaults_and_preserves_cli_overrides(tmp_path):
+    """验证配置只填充默认值，不覆盖显式 CLI 参数。"""
+
     config_path = tmp_path / "wear-agent.json"
     config_path.write_text(json.dumps({
         "ceph_bin": "/usr/bin/ceph",
@@ -306,6 +370,8 @@ def test_load_agent_config_applies_defaults_and_preserves_cli_overrides(tmp_path
 
 
 def test_build_arg_parser_accepts_agent_options():
+    """验证全部独立运行和 cephadm 运行参数均可解析。"""
+
     args = build_arg_parser().parse_args([
         "--ceph-bin", "ceph-test",
         "--host", "host-a",
@@ -328,11 +394,19 @@ def test_build_arg_parser_accepts_agent_options():
 
 
 def test_run_agent_honors_iterations_and_sleeps_between_samples():
+    """验证有限循环会按次数轮询，并只在采样之间休眠。"""
+
     class FakeAgent:
+        """统计运行循环发起的采样次数。"""
+
         def __init__(self):
+            """初始化可观测的采样计数。"""
+
             self.samples = 0
 
         def sample_once(self):
+            """记录一次循环采样且不生成报告。"""
+
             self.samples += 1
             return []
 
@@ -355,6 +429,8 @@ def test_run_agent_honors_iterations_and_sleeps_between_samples():
 
 
 def test_main_once_assembles_agent_and_submits_report(monkeypatch):
+    """验证 CLI 单次模式先建立基线，再提交一份真实增量报告。"""
+
     previous = DiskstatsCollector.parse([
         "259 0 nvme0n1 0 0 0 0 10 0 20 0 0 0 0 0 0 0 0",
     ])

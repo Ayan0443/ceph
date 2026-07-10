@@ -52,6 +52,7 @@ set(mgr_modules
   status
   telegraf
   telemetry
+  # 原因：安装该模块，使 ceph mgr module enable wear 能够加载它。
   wear
   # tests (for testing purpose only)
   test_orchestrator

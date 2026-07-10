@@ -212,6 +212,7 @@ from cephadmlib.daemons import (
     OAuth2Proxy,
     Tracing,
     NodeProxy,
+    # 原因：向 cephadm 入口导出已注册的 daemon form。
     WearAgent,
 )
 from cephadmlib.agent import http_query
@@ -257,6 +258,7 @@ def get_supported_daemons():
     supported_daemons.append(OAuth2Proxy.daemon_type)
     supported_daemons.extend(Tracing.components)
     supported_daemons.append(NodeProxy.daemon_type)
+    # 原因：让 deploy/redeploy 命令校验能够识别该 daemon form。
     supported_daemons.append(WearAgent.daemon_type)
     supported_daemons.append(SMB.daemon_type)
     assert len(supported_daemons) == len(set(supported_daemons))

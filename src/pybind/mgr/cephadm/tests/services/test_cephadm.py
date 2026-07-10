@@ -75,6 +75,8 @@ class TestCephadmService:
             assert "client.%s.id1" % (daemon_type) == \
                 service_registry.get_service(daemon_type).get_auth_entity("id1")
 
+        # 原因：两类 daemon 都使用按主机划分的 CephX 身份，
+        # 缺少主机时必须拒绝生成实体名。
         for daemon_type in ['crash', 'wear-agent']:
             assert "client.%s.host" % daemon_type == \
                 service_registry.get_service(daemon_type).get_auth_entity("id1", "host")

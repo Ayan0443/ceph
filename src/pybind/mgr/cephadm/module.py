@@ -977,6 +977,7 @@ class CephadmOrchestrator(orchestrator.Orchestrator, MgrModule):
         Generate a unique random service name
         """
         suffix = daemon_type not in [
+            # 原因：按主机部署的 wear-agent 使用主机名作为稳定 ID。
             'mon', 'crash', 'ceph-exporter', 'node-proxy', 'wear-agent',
             'prometheus', 'node-exporter', 'grafana', 'alertmanager',
             'container', 'agent', 'snmp-gateway', 'loki', 'promtail', 'alloy',
@@ -3907,6 +3908,7 @@ Then run the following:
                 'jaeger-collector': PlacementSpec(count=1),
                 'jaeger-query': PlacementSpec(count=1),
                 'node-proxy': PlacementSpec(host_pattern='*'),
+                # 原因：每个存储主机都必须观测本机 OSD 介质。
                 'wear-agent': PlacementSpec(host_pattern='*'),
                 SMBService.TYPE: PlacementSpec(count=1),
             }

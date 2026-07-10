@@ -8,7 +8,11 @@ from orchestrator._interface import daemon_type_to_service, service_to_daemon_ty
 
 
 class FakeMgr:
+    """提供 WearAgentService 所需的最小 MGR 行为。"""
+
     def __init__(self):
+        """准备可观测日志和 monitor 命令响应。"""
+
         self.log = MagicMock()
         self.mon_command = MagicMock(return_value=(
             0,
@@ -17,10 +21,14 @@ class FakeMgr:
         ))
 
     def get_minimal_ceph_conf(self):
+        """返回嵌入部署数据的最小集群配置。"""
+
         return '[global]\nfsid = fsid\n'
 
 
 def test_wear_agent_service_spec_and_orchestrator_mapping():
+    """验证通用规格和 orchestrator 映射能识别 wear-agent。"""
+
     spec = ServiceSpec(service_type='wear-agent', placement=PlacementSpec(host_pattern='*'))
 
     assert isinstance(spec, WearAgentSpec)
@@ -30,6 +38,8 @@ def test_wear_agent_service_spec_and_orchestrator_mapping():
 
 
 def test_wear_agent_prepare_create_generates_keyring_and_config():
+    """验证部署生成最小权限 keyring 和预期运行配置。"""
+
     mgr = FakeMgr()
     service = WearAgentService(mgr)
     daemon_spec = CephadmDaemonDeploySpec(
@@ -66,6 +76,8 @@ def test_wear_agent_prepare_create_generates_keyring_and_config():
 
 
 def test_wear_agent_auth_caps_are_refreshed_when_get_or_create_returns_error():
+    """验证已有 CephX 实体的旧权限会被修正为 wear-agent 权限。"""
+
     mgr = FakeMgr()
     mgr.mon_command = MagicMock(side_effect=[
         (1, '', 'old caps'),
